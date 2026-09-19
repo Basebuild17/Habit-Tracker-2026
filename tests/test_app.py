@@ -56,3 +56,34 @@ def test_cookie_accept_sets_preference(client):
     response = client.post("/cookies/accept")
     assert response.status_code == 302
     assert "habit_cookie_consent=accepted" in response.headers["Set-Cookie"]
+
+
+def test_metric_habit_can_be_archived_and_restored(client, app):
+    client.post(
+        "/habits",
+        data={
+            "name": "Drink water",
+            "tracking_type": "metric",
+            "target_value": "8",
+            "unit": "glasses",
+            "category": "Health",
+            "color": "#10b981",
+        },
+    )
+    response = client.get("/")
+    assert b"goal 8 glasses" in response.data
+    client.post("/habits/1/archive")
+    assert b"Drink water" not in client.get("/").data
+    assert b"Drink water" in client.get("/archive").data
+    client.post("/habits/1/restore")
+    assert b"Drink water" in client.get("/").data
+
+
+def test_completion_can_store_a_note(client, app):
+    client.post("/habits", data={"name": "Reflect"})
+    client.post("/habits/1/toggle", data={"note": "Felt focused"})
+    with app.app_context():
+        from db import get_db
+
+        completion = get_db().execute("SELECT note FROM completions").fetchone()
+        assert completion["note"] == "Felt focused"

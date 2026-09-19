@@ -13,7 +13,12 @@ WEEKDAYS = [(0, "Mon"), (1, "Tue"), (2, "Wed"), (3, "Thu"), (4, "Fri"), (5, "Sat
 def habit_form_values(form):
     tags = [form.get(f"tag{index}", "").strip()[:24] for index in range(1, 4)]
     frequency = sorted({int(day) for day in form.getlist("frequency") if day.isdigit() and 0 <= int(day) <= 6})
-    return tags, ",".join(str(day) for day in frequency) or "0,1,2,3,4,5,6"
+    tracking_type = form.get("tracking_type", "boolean") if form.get("tracking_type") in {"boolean", "metric"} else "boolean"
+    try:
+        target_value = max(float(form.get("target_value", 1)), 1)
+    except ValueError:
+        target_value = 1
+    return tags, ",".join(str(day) for day in frequency) or "0,1,2,3,4,5,6", tracking_type, target_value, form.get("unit", "").strip()[:16], form.get("category", "Health"), form.get("color", "#2d7a52")
 
 
 def create_app(test_config=None):
@@ -41,9 +46,11 @@ def create_app(test_config=None):
                      EXISTS (
                        SELECT 1 FROM completions c
                        WHERE c.habit_id = h.id AND c.completed_on = ?
-                     ) AS completed_today, h.tag1, h.tag2, h.tag3, h.frequency
+                                     ) AS completed_today, h.tag1, h.tag2, h.tag3, h.frequency,
+                                     h.tracking_type, h.target_value, h.unit, h.category, h.color, h.archived
             FROM habits h
-                 ORDER BY h.position, h.id
+                                 WHERE h.archived = 0
+                                 ORDER BY h.position, h.id
             """,
             (today,),
         ).fetchall()
@@ -55,6 +62,11 @@ def create_app(test_config=None):
                 "streak": current_streak_for_schedule(habit["id"], habit["frequency"]),
                 "tags": [tag for tag in (habit["tag1"], habit["tag2"], habit["tag3"]) if tag],
                 "frequency": {int(day) for day in habit["frequency"].split(",") if day},
+                "tracking_type": habit["tracking_type"],
+                "target_value": habit["target_value"],
+                "unit": habit["unit"] or "",
+                "category": habit["category"],
+                "color": habit["color"],
             }
             for habit in habits
         ]
@@ -69,7 +81,7 @@ def create_app(test_config=None):
     @app.post("/habits")
     def add_habit():
         name = request.form.get("name", "").strip()
-        tags, frequency = habit_form_values(request.form)
+        tags, frequency, tracking_type, target_value, unit, category, color = habit_form_values(request.form)
         if not name:
             flash("Give your habit a name first.", "error")
         elif len(name) > 80:
@@ -78,8 +90,8 @@ def create_app(test_config=None):
             db = get_db()
             position = db.execute("SELECT COALESCE(MAX(position), -1) + 1 FROM habits").fetchone()[0]
             db.execute(
-                "INSERT INTO habits (name, tag1, tag2, tag3, frequency, position) VALUES (?, ?, ?, ?, ?, ?)",
-                (name, *tags, frequency, position),
+                "INSERT INTO habits (name, tag1, tag2, tag3, frequency, tracking_type, target_value, unit, category, color, position) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (name, *tags, frequency, tracking_type, target_value, unit, category, color, position),
             )
             db.commit()
             flash(f'Added "{name}".', "success")
@@ -88,12 +100,16 @@ def create_app(test_config=None):
     @app.post("/habits/<int:habit_id>/toggle")
     def toggle_habit(habit_id):
         db = get_db()
-        habit = db.execute("SELECT name FROM habits WHERE id = ?", (habit_id,)).fetchone()
+        habit = db.execute("SELECT name, tracking_type, target_value FROM habits WHERE id = ?", (habit_id,)).fetchone()
         if habit is None:
             flash("That habit no longer exists.", "error")
             return redirect(url_for("index"))
 
         today = date.today().isoformat()
+        try:
+            value = max(float(request.form.get("value", habit["target_value"])), 0)
+        except ValueError:
+            value = habit["target_value"]
         completion = db.execute(
             "SELECT 1 FROM completions WHERE habit_id = ? AND completed_on = ?",
             (habit_id, today),
@@ -105,8 +121,8 @@ def create_app(test_config=None):
             )
         else:
             db.execute(
-                "INSERT INTO completions (habit_id, completed_on) VALUES (?, ?)",
-                (habit_id, today),
+                "INSERT INTO completions (habit_id, completed_on, value, note) VALUES (?, ?, ?, ?)",
+                (habit_id, today, value, request.form.get("note", "").strip()[:500]),
             )
         db.commit()
         return redirect(url_for("index"))
@@ -120,13 +136,13 @@ def create_app(test_config=None):
             return redirect(url_for("index"))
         if request.method == "POST":
             name = request.form.get("name", "").strip()
-            tags, frequency = habit_form_values(request.form)
+            tags, frequency, tracking_type, target_value, unit, category, color = habit_form_values(request.form)
             if not name or len(name) > 80:
                 flash("Use a habit name between 1 and 80 characters.", "error")
             else:
                 db.execute(
-                    "UPDATE habits SET name = ?, tag1 = ?, tag2 = ?, tag3 = ?, frequency = ? WHERE id = ?",
-                    (name, *tags, frequency, habit_id),
+                    "UPDATE habits SET name = ?, tag1 = ?, tag2 = ?, tag3 = ?, frequency = ?, tracking_type = ?, target_value = ?, unit = ?, category = ?, color = ? WHERE id = ?",
+                    (name, *tags, frequency, tracking_type, target_value, unit, category, color, habit_id),
                 )
                 db.commit()
                 flash("Habit updated.", "success")
@@ -157,6 +173,24 @@ def create_app(test_config=None):
         db.commit()
         flash("Habit deleted.", "success")
         return redirect(url_for("index"))
+
+    @app.post("/habits/<int:habit_id>/archive")
+    def archive_habit(habit_id):
+        get_db().execute("UPDATE habits SET archived = 1 WHERE id = ?", (habit_id,))
+        get_db().commit()
+        flash("Habit archived.", "success")
+        return redirect(url_for("index"))
+
+    @app.post("/habits/<int:habit_id>/restore")
+    def restore_habit(habit_id):
+        get_db().execute("UPDATE habits SET archived = 0 WHERE id = ?", (habit_id,))
+        get_db().commit()
+        return redirect(url_for("archive"))
+
+    @app.get("/archive")
+    def archive():
+        habits = get_db().execute("SELECT * FROM habits WHERE archived = 1 ORDER BY position, id").fetchall()
+        return render_template("archive.html", habits=habits)
 
     @app.get("/stats")
     def stats():
