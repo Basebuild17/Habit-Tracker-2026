@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Habit Tracker{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="{{ url_for('index') }}"><span class="brand-mark">+</span> Habit Tracker</a>
+    <nav><a href="{{ url_for('index') }}">Today</a><a href="{{ url_for('stats') }}">Stats</a><a href="{{ url_for('history') }}">History</a><a href="{{ url_for('settings') }}">Settings</a></nav>
+  </header>
+  <main class="shell">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}<div class="messages">{% for category, message in messages %}<p class="message {{ category }}">{{ message }}</p>{% endfor %}</div>{% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+  {% if not request.cookies.get('habit_cookie_consent') %}
+    <aside class="cookie-banner"><div><strong>Cookie preferences</strong><p>This app uses one essential preference cookie to remember your choice.</p></div><form method="post" action="{{ url_for('accept_cookies') }}"><button type="submit">Accept</button></form><form method="post" action="{{ url_for('clear_cookies') }}"><button class="quiet-button" type="submit">Erase cookies</button></form></aside>
+  {% endif %}
+  <script>
+    document.querySelectorAll('.is-complete').forEach(function (habit) {
+      habit.classList.add('celebrate');
+    });
+  </script>
+</body>
+</html>

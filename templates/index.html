@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Today | Habit Tracker{% endblock %}
+{% block content %}
+<section class="intro">
+  <p class="eyebrow">{{ today }}</p>
+  <h1>Small actions.<br><em>Real momentum.</em></h1>
+  <p class="lede">Keep the promises you make to yourself, one day at a time.</p>
+</section>
+
+<section class="add-panel">
+  <form method="post" action="{{ url_for('add_habit') }}">
+    <label for="habit-name">What will you practice?</label>
+    <div class="form-row"><input id="habit-name" name="name" maxlength="80" placeholder="e.g. Read for 20 minutes" required><button type="submit">Add habit</button></div>
+    <div class="habit-options"><fieldset><legend>Tags <span>(up to 3)</span></legend><div class="tag-fields"><input name="tag1" maxlength="24" placeholder="Health"><input name="tag2" maxlength="24" placeholder="Mind"><input name="tag3" maxlength="24" placeholder="Work"></div></fieldset><fieldset><legend>Frequency</legend><div class="days">{% for value, label in weekdays %}<label><input type="checkbox" name="frequency" value="{{ value }}" checked><span>{{ label }}</span></label>{% endfor %}</div></fieldset></div>
+  </form>
+</section>
+
+<section class="habit-section">
+  <div class="section-heading"><h2>Today’s habits</h2><span>{{ completed_count }}/{{ habits|length }} complete</span></div>
+  <div class="progress-track"><div class="progress-fill" style="width: {{ (completed_count / habits|length * 100) if habits else 0 }}%"></div></div>
+  {% if habits %}
+    <div class="habit-list">
+    {% for habit in habits %}
+      <article class="habit-row {% if habit.completed_today %}is-complete{% endif %}">
+        <form method="post" action="{{ url_for('toggle_habit', habit_id=habit.id) }}"><button class="check" type="submit" aria-label="Mark {{ habit.name }} complete">{% if habit.completed_today %}✓{% endif %}</button></form>
+        <div class="habit-copy"><h3>{{ habit.name }}</h3><p>{% if habit.streak %}{{ habit.streak }} day streak{% else %}Start your streak today{% endif %}</p><div class="tag-list">{% for tag in habit.tags %}<span>{{ tag }}</span>{% endfor %}</div></div>
+        <div class="row-actions"><a class="edit" href="{{ url_for('edit_habit', habit_id=habit.id) }}">Edit</a><form method="post" action="{{ url_for('move_habit', habit_id=habit.id, direction='up') }}"><button class="move" type="submit" aria-label="Move {{ habit.name }} up">↑</button></form><form method="post" action="{{ url_for('move_habit', habit_id=habit.id, direction='down') }}"><button class="move" type="submit" aria-label="Move {{ habit.name }} down">↓</button></form></div>
+        <form method="post" action="{{ url_for('delete_habit', habit_id=habit.id) }}"><button class="delete" type="submit" aria-label="Delete {{ habit.name }}">×</button></form>
+      </article>
+    {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty"><span>✦</span><h3>Your list is clear.</h3><p>Add one habit above and make today count.</p></div>
+  {% endif %}
+</section>
+{% endblock %}

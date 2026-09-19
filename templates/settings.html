@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Settings | Habit Tracker{% endblock %}
+{% block content %}
+<section class="intro compact"><p class="eyebrow">Control your data</p><h1>Settings.</h1><p class="lede">Your habits stay in your local SQLite database until you choose to remove them.</p></section>
+<section class="settings-list"><div class="setting"><div><h2>Save history</h2><p>Completion history is saved automatically so your streaks and calendar remain available.</p></div><span class="status">On</span></div><div class="setting"><div><h2>Erase completion history</h2><p>Remove every check-in while keeping your habits.</p></div><form method="post"><input type="hidden" name="action" value="erase-history"><button class="danger-button" type="submit" onclick="return confirm('Erase all completion history?')">Erase history</button></form></div><div class="setting"><div><h2>Cookie preferences</h2><p>Remove the preference cookie from this browser.</p></div><form method="post" action="{{ url_for('clear_cookies') }}"><button class="quiet-button" type="submit">Erase cookies</button></form></div></section>
+{% endblock %}

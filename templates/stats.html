@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Stats | Habit Tracker{% endblock %}
+{% block content %}
+<section class="intro compact"><p class="eyebrow">Last seven days</p><h1>Your rhythm.</h1><p class="lede">Consistency is built from showing up.</p></section>
+<section class="stats-panel"><div class="stat-number">{{ total }}</div><div><strong>check-ins</strong><p>across all habits this week</p></div></section>
+<section class="week"><div class="section-heading"><h2>Weekly activity</h2><span>{{ possible }} possible</span></div><div class="chart">{% for day in days %}<div class="bar-item"><div class="bar-track"><div class="bar" style="height: {{ [day.completed * 24, 8]|max }}px"></div></div><span>{{ day.date.strftime('%a')[0] }}</span><small>{{ day.completed }}</small></div>{% endfor %}</div></section>
+{% endblock %}

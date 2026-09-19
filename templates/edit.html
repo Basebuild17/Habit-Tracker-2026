@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Edit habit | Habit Tracker{% endblock %}
+{% block content %}
+<section class="intro compact"><p class="eyebrow">Refine your practice</p><h1>Edit habit.</h1></section>
+<section class="add-panel"><form method="post"><label for="habit-name">Habit name</label><input id="habit-name" name="name" maxlength="80" value="{{ habit.name }}" required><div class="habit-options"><fieldset><legend>Tags <span>(up to 3)</span></legend><div class="tag-fields">{% for key in ['tag1', 'tag2', 'tag3'] %}<input name="{{ key }}" maxlength="24" value="{{ habit[key] or '' }}" placeholder="Tag">{% endfor %}</div></fieldset><fieldset><legend>Frequency</legend><div class="days">{% for value, label in weekdays %}<label><input type="checkbox" name="frequency" value="{{ value }}" {% if value in (habit.frequency or '0,1,2,3,4,5,6').split(',')|map('int') %}checked{% endif %}><span>{{ label }}</span></label>{% endfor %}</div></fieldset></div><div class="form-row edit-actions"><a class="cancel" href="{{ url_for('index') }}">Cancel</a><button type="submit">Save changes</button></div></form></section>
+{% endblock %}
