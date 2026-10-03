@@ -1,3 +1,8 @@
+import sqlite3
+
+from app import create_app
+
+
 def test_add_and_complete_habit(client):
     response = client.post("/habits", data={"name": "Drink water"}, follow_redirects=True)
     assert b"Drink water" in response.data
@@ -56,3 +61,67 @@ def test_cookie_accept_sets_preference(client):
     response = client.post("/cookies/accept")
     assert response.status_code == 302
     assert "habit_cookie_consent=accepted" in response.headers["Set-Cookie"]
+
+
+def test_cookie_accept_does_not_redirect_to_external_referrer(client):
+    response = client.post(
+        "/cookies/accept",
+        headers={"Referer": "https://example.com/untrusted"},
+    )
+
+    assert response.headers["Location"] == "/"
+
+
+def test_reorder_is_preserved_after_database_reinitialization(client, app):
+    client.post("/habits", data={"name": "First"})
+    client.post("/habits", data={"name": "Second"})
+    client.post("/habits/2/move/up")
+
+    create_app({
+        "TESTING": True,
+        "SECRET_KEY": "test",
+        "DATABASE": app.config["DATABASE"],
+    })
+    response = client.get("/")
+
+    assert response.data.index(b"<h3>Second</h3>") < response.data.index(b"<h3>First</h3>")
+
+
+def test_weekly_possible_count_uses_habit_schedule(client):
+    client.post("/habits", data={"name": "Monday habit", "frequency": ["0"]})
+    client.post("/habits", data={"name": "Thursday habit", "frequency": ["3"]})
+
+    response = client.get("/stats")
+
+    assert b"2 possible" in response.data
+
+
+def test_legacy_habits_get_initial_positions(tmp_path):
+    database_path = tmp_path / "legacy.sqlite"
+    database = sqlite3.connect(database_path)
+    database.execute("CREATE TABLE habits (id INTEGER PRIMARY KEY, name TEXT NOT NULL)")
+    database.executemany(
+        "INSERT INTO habits (id, name) VALUES (?, ?)",
+        [(4, "Older"), (9, "Newer")],
+    )
+    database.commit()
+    database.close()
+
+    app = create_app({"TESTING": True, "DATABASE": database_path})
+
+    with app.app_context():
+        from db import get_db
+
+        positions = get_db().execute(
+            "SELECT id, position FROM habits ORDER BY id"
+        ).fetchall()
+
+    assert [(row["id"], row["position"]) for row in positions] == [(4, 4), (9, 9)]
+
+
+def test_app_uses_configured_secret_key(tmp_path, monkeypatch):
+    monkeypatch.setenv("SECRET_KEY", "private-test-key")
+
+    app = create_app({"TESTING": True, "DATABASE": tmp_path / "configured.sqlite"})
+
+    assert app.config["SECRET_KEY"] == "private-test-key"

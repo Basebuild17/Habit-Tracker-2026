@@ -1,5 +1,7 @@
+import os
 from datetime import date, timedelta
 from pathlib import Path
+from urllib.parse import urlparse
 
 from flask import Flask, flash, redirect, render_template, request, url_for
 
@@ -19,7 +21,7 @@ def habit_form_values(form):
 def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
-        SECRET_KEY="dev",
+        SECRET_KEY=os.environ.get("SECRET_KEY", "dev"),
         DATABASE=Path(app.instance_path) / "habits.sqlite",
     )
 
@@ -61,7 +63,7 @@ def create_app(test_config=None):
         return render_template(
             "index.html",
             habits=habit_cards,
-            today=date.today().strftime("%A, %B %-d"),
+            today=date.today().strftime("%A, %B %d"),
             weekdays=WEEKDAYS,
             completed_count=sum(habit["completed_today"] for habit in habit_cards),
         )
@@ -164,12 +166,19 @@ def create_app(test_config=None):
         start = end - timedelta(days=6)
         rows = weekly_completion(start, end)
         total = sum(row["completed"] for row in rows)
-        habit_count = get_db().execute("SELECT COUNT(*) FROM habits").fetchone()[0]
+        frequencies = get_db().execute("SELECT frequency FROM habits").fetchall()
+        possible = sum(
+            row["date"].weekday() in {
+                int(day) for day in habit["frequency"].split(",") if day
+            }
+            for row in rows
+            for habit in frequencies
+        )
         return render_template(
             "stats.html",
             days=rows,
             total=total,
-            possible=len(rows) * habit_count,
+            possible=possible,
         )
 
     @app.get("/history")
@@ -201,7 +210,13 @@ def create_app(test_config=None):
 
     @app.post("/cookies/accept")
     def accept_cookies():
-        response = redirect(request.referrer or url_for("index"))
+        referrer = urlparse(request.referrer or "")
+        target = (
+            request.referrer
+            if referrer.scheme in {"http", "https"} and referrer.netloc == request.host
+            else url_for("index")
+        )
+        response = redirect(target)
         response.set_cookie("habit_cookie_consent", "accepted", max_age=31536000, samesite="Lax")
         return response
 

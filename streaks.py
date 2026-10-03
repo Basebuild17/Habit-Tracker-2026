@@ -30,6 +30,8 @@ def current_streak_for_schedule(habit_id, frequency, today=None):
     today = today or date.today()
     dates = completion_dates(habit_id)
     scheduled = {int(day) for day in frequency.split(",") if day}
+    if not scheduled:
+        return 0
     cursor = today
     streak = 0
     while True:
@@ -38,8 +40,6 @@ def current_streak_for_schedule(habit_id, frequency, today=None):
                 break
             streak += 1
         cursor -= timedelta(days=1)
-        if cursor < today - timedelta(days=90):
-            break
     return streak
 
 
