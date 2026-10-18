@@ -16,3 +16,6 @@ CREATE TABLE IF NOT EXISTS completions (
     UNIQUE (habit_id, completed_on),
     FOREIGN KEY (habit_id) REFERENCES habits (id) ON DELETE CASCADE
 );
+
+-- Index to speed up queries that group or filter by completed_on
+CREATE INDEX IF NOT EXISTS idx_completions_completed_on ON completions(completed_on);
