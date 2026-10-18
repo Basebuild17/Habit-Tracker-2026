@@ -6,10 +6,31 @@ from urllib.parse import urlparse
 from flask import Flask, flash, redirect, render_template, request, url_for
 
 from db import close_db, get_db, init_db
-from streaks import current_streak_for_schedule, history_for_habit, weekly_completion
+from streaks import weekly_completion
 
 
 WEEKDAYS = [(0, "Mon"), (1, "Tue"), (2, "Wed"), (3, "Thu"), (4, "Fri"), (5, "Sat"), (6, "Sun")]
+
+
+def parse_frequency(frequency):
+    if not frequency:
+        return set(range(7))
+    return {int(day) for day in str(frequency).split(",") if day}
+
+
+def compute_streak_from_dates(completed_dates, frequency):
+    scheduled = parse_frequency(frequency)
+    if not scheduled:
+        return 0
+    cursor = date.today()
+    streak = 0
+    while True:
+        if cursor.weekday() in scheduled:
+            if cursor not in completed_dates:
+                break
+            streak += 1
+        cursor -= timedelta(days=1)
+    return streak
 
 
 def habit_form_values(form):
@@ -37,7 +58,8 @@ def create_app(test_config=None):
     @app.get("/")
     def index():
         today = date.today().isoformat()
-        habits = get_db().execute(
+        db = get_db()
+        habits = db.execute(
             """
             SELECT h.id, h.name,
                      EXISTS (
@@ -49,14 +71,26 @@ def create_app(test_config=None):
             """,
             (today,),
         ).fetchall()
+
+        habit_ids = [habit["id"] for habit in habits]
+        completions_by_habit = {}
+        if habit_ids:
+            placeholders = ",".join("?" for _ in habit_ids)
+            rows = db.execute(
+                f"SELECT habit_id, completed_on FROM completions WHERE habit_id IN ({placeholders})",
+                habit_ids,
+            ).fetchall()
+            for row in rows:
+                completions_by_habit.setdefault(row["habit_id"], set()).add(date.fromisoformat(row["completed_on"]))
+
         habit_cards = [
             {
                 "id": habit["id"],
                 "name": habit["name"],
                 "completed_today": bool(habit["completed_today"]),
-                "streak": current_streak_for_schedule(habit["id"], habit["frequency"]),
+                "streak": compute_streak_from_dates(completions_by_habit.get(habit["id"], set()), habit["frequency"]),
                 "tags": [tag for tag in (habit["tag1"], habit["tag2"], habit["tag3"]) if tag],
-                "frequency": {int(day) for day in habit["frequency"].split(",") if day},
+                "frequency": parse_frequency(habit["frequency"]),
             }
             for habit in habits
         ]
@@ -166,13 +200,13 @@ def create_app(test_config=None):
         start = end - timedelta(days=6)
         rows = weekly_completion(start, end)
         total = sum(row["completed"] for row in rows)
-        frequencies = get_db().execute("SELECT frequency FROM habits").fetchall()
+        db = get_db()
+        frequency_sets = [parse_frequency(row["frequency"]) for row in db.execute("SELECT frequency FROM habits").fetchall()]
         possible = sum(
-            row["date"].weekday() in {
-                int(day) for day in habit["frequency"].split(",") if day
-            }
+            1
             for row in rows
-            for habit in frequencies
+            for frequency_set in frequency_sets
+            if row["date"].weekday() in frequency_set
         )
         return render_template(
             "stats.html",
@@ -185,12 +219,25 @@ def create_app(test_config=None):
     def history():
         end = date.today()
         start = end - timedelta(days=29)
-        habits = get_db().execute("SELECT id, name, tag1, tag2, tag3 FROM habits ORDER BY position, id").fetchall()
-        history = [
-            {"habit": habit, "dates": history_for_habit(habit["id"], start, end)}
+        db = get_db()
+        habits = db.execute("SELECT id, name, tag1, tag2, tag3 FROM habits ORDER BY position, id").fetchall()
+
+        habit_ids = [habit["id"] for habit in habits]
+        completions_by_habit = {}
+        if habit_ids:
+            placeholders = ",".join("?" for _ in habit_ids)
+            rows = db.execute(
+                f"SELECT habit_id, completed_on FROM completions WHERE habit_id IN ({placeholders}) AND completed_on BETWEEN ? AND ?",
+                (*habit_ids, start.isoformat(), end.isoformat()),
+            ).fetchall()
+            for row in rows:
+                completions_by_habit.setdefault(row["habit_id"], set()).add(date.fromisoformat(row["completed_on"]))
+
+        history_rows = [
+            {"habit": habit, "dates": completions_by_habit.get(habit["id"], set())}
             for habit in habits
         ]
-        return render_template("history.html", days=[end - timedelta(days=offset) for offset in range(30)], history=history)
+        return render_template("history.html", days=[end - timedelta(days=offset) for offset in range(30)], history=history_rows)
 
     @app.route("/settings", methods=["GET", "POST"])
     def settings():
