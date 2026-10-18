@@ -21,7 +21,7 @@
     {% block content %}{% endblock %}
   </main>
   {% if not request.cookies.get('habit_cookie_consent') %}
-    <aside class="cookie-banner"><div><strong>Cookie preferences</strong><p>This app uses one essential preference cookie to remember your choice.</p></div><form method="post" action="{{ url_for('accept_cookies') }}"><button type="submit">Accept</button></form><form method="post" action="{{ url_for('clear_cookies') }}"><button class="quiet-button" type="submit">Erase cookies</button></form></aside>
+    <aside class="cookie-banner"><div><strong>Cookie preferences</strong><p>This app uses an optional cookie to remember your preference.</p></div><form method="post" action="{{ url_for('accept_cookies') }}"><button type="submit">Accept</button></form><form method="post" action="{{ url_for('clear_cookies') }}"><button class="quiet-button" type="submit">Erase cookies</button></form></aside>
   {% endif %}
   <script>
     document.querySelectorAll('.is-complete').forEach(function (habit) {

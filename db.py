@@ -23,6 +23,7 @@ def init_db():
     schema = Path(current_app.root_path, "schema.sql").read_text()
     db.executescript(schema)
     columns = {row["name"] for row in db.execute("PRAGMA table_info(habits)").fetchall()}
+    position_needs_backfill = "position" not in columns
     migrations = {
         "tag1": "ALTER TABLE habits ADD COLUMN tag1 TEXT",
         "tag2": "ALTER TABLE habits ADD COLUMN tag2 TEXT",
@@ -33,5 +34,6 @@ def init_db():
     for column, statement in migrations.items():
         if column not in columns:
             db.execute(statement)
-    db.execute("UPDATE habits SET position = id WHERE position = 0")
+    if position_needs_backfill:
+        db.execute("UPDATE habits SET position = id")
     db.commit()
