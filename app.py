@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from habit_tracker.app import app, create_app
 
 from flask import Flask, flash, redirect, render_template, request, url_for
@@ -17,7 +19,7 @@ def habit_form_values(form):
         target_value = max(float(form.get("target_value", 1)), 1)
     except ValueError:
         target_value = 1
-    return tags, ",".join(str(day) for day in frequency) or "0,1,2,3,4,5,6", tracking_type, target_value, form.get("unit", "").strip()[:16], form.get("category", "Health"), form.get("color", "#2d7a52")
+    return tags, ",".join(str(day) for day in frequency) or "0,1,2,3,4,5,6", tracking_type, target_value, form.get("unit", "").strip()[:16], form.get("category", "Health"), form.get("color", "#2d7[...]
 
 
 def create_app(test_config=None):
@@ -43,10 +45,10 @@ def create_app(test_config=None):
             """
             SELECT h.id, h.name,
                      EXISTS (
-                       SELECT 1 FROM completions c
-                       WHERE c.habit_id = h.id AND c.completed_on = ?
-                                     ) AS completed_today, h.tag1, h.tag2, h.tag3, h.frequency,
-                                     h.tracking_type, h.target_value, h.unit, h.category, h.color, h.archived
+                        SELECT 1 FROM completions c
+                        WHERE c.habit_id = h.id AND c.completed_on = ?
+                                      ) AS completed_today, h.tag1, h.tag2, h.tag3, h.frequency,
+                                      h.tracking_type, h.target_value, h.unit, h.category, h.color, h.archived
             FROM habits h
                                  WHERE h.archived = 0
                                  ORDER BY h.position, h.id
