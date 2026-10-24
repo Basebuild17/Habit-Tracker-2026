@@ -11,6 +11,7 @@
   <form method="post" action="{{ url_for('add_habit') }}">
     <label for="habit-name">What will you practice?</label>
     <div class="form-row"><input id="habit-name" name="name" maxlength="80" placeholder="e.g. Read for 20 minutes" required><button type="submit">Add habit</button></div>
+    <div class="habit-options"><fieldset><legend>Tracking type</legend><select name="tracking_type"><option value="boolean">Checkmark (yes/no)</option><option value="metric">Numeric goal</option></select></fieldset><fieldset><legend>Goal and unit</legend><div class="tag-fields"><input name="target_value" type="number" min="1" value="1" aria-label="Target"><input name="unit" maxlength="16" placeholder="glasses, mins" aria-label="Unit"></div></fieldset><fieldset><legend>Category</legend><div class="tag-fields"><input name="category" maxlength="24" value="Health"><input name="color" type="color" value="#2d7a52" aria-label="Category color"></div></fieldset></div>
     <div class="habit-options"><fieldset><legend>Tags <span>(up to 3)</span></legend><div class="tag-fields"><input name="tag1" maxlength="24" placeholder="Health"><input name="tag2" maxlength="24" placeholder="Mind"><input name="tag3" maxlength="24" placeholder="Work"></div></fieldset><fieldset><legend>Frequency</legend><div class="days">{% for value, label in weekdays %}<label><input type="checkbox" name="frequency" value="{{ value }}" checked><span>{{ label }}</span></label>{% endfor %}</div></fieldset></div>
   </form>
 </section>
@@ -23,9 +24,9 @@
     {% for habit in habits %}
       <article class="habit-row {% if habit.completed_today %}is-complete{% endif %}">
         <form method="post" action="{{ url_for('toggle_habit', habit_id=habit.id) }}"><button class="check" type="submit" aria-label="Mark {{ habit.name }} complete">{% if habit.completed_today %}✓{% endif %}</button></form>
-        <div class="habit-copy"><h3>{{ habit.name }}</h3><p>{% if habit.streak %}{{ habit.streak }} day streak{% else %}Start your streak today{% endif %}</p><div class="tag-list">{% for tag in habit.tags %}<span>{{ tag }}</span>{% endfor %}</div></div>
+        <div class="habit-copy"><h3>{{ habit.name }}</h3><p>{% if habit.streak %}{{ habit.streak }} day streak{% else %}Start your streak today{% endif %}{% if habit.tracking_type == 'metric' %} · goal {{ habit.target_value|int }} {{ habit.unit }}{% endif %}</p><div class="tag-list">{% for tag in habit.tags %}<span>{{ tag }}</span>{% endfor %}<span style="color: {{ habit.color }}">{{ habit.category }}</span></div></div>
         <div class="row-actions"><a class="edit" href="{{ url_for('edit_habit', habit_id=habit.id) }}">Edit</a><form method="post" action="{{ url_for('move_habit', habit_id=habit.id, direction='up') }}"><button class="move" type="submit" aria-label="Move {{ habit.name }} up">↑</button></form><form method="post" action="{{ url_for('move_habit', habit_id=habit.id, direction='down') }}"><button class="move" type="submit" aria-label="Move {{ habit.name }} down">↓</button></form></div>
-        <form method="post" action="{{ url_for('delete_habit', habit_id=habit.id) }}"><button class="delete" type="submit" aria-label="Delete {{ habit.name }}">×</button></form>
+        <form method="post" action="{{ url_for('archive_habit', habit_id=habit.id) }}"><button class="move" type="submit" aria-label="Archive {{ habit.name }}" title="Archive">▣</button></form><form method="post" action="{{ url_for('delete_habit', habit_id=habit.id) }}"><button class="delete" type="submit" aria-label="Delete {{ habit.name }}">×</button></form>
       </article>
     {% endfor %}
     </div>

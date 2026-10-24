@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Settings | Habit Tracker{% endblock %}
+{% block content %}
+<section class="intro compact"><p class="eyebrow">Control your data</p><h1>Settings.</h1><p class="lede">Your habits stay in your local SQLite database until you choose to remove them.</p></section>
+<section class="settings-list"><div class="setting"><div><h2>Save history</h2><p>Completion history is saved automatically so your streaks and calendar remain available.</p></div><span class="status ok">On</span></div><form method="post"><input type="hidden" name="action" value="erase-history"><button type="submit" class="danger">Erase completion history</button></form></section>
+{% endblock %}

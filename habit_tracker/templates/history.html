@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}History | Habit Tracker{% endblock %}
+{% block content %}
+<section class="intro compact"><p class="eyebrow">Saved completion history</p><h1>Your calendar.</h1><p class="lede">A clear view of the last 30 days.</p></section>
+<section class="history-panel"><div class="calendar-head"><span>Habit</span>{% for day in days %}<span title="{{ day.strftime('%B %d') }}">{{ day.strftime('%d') }}</span>{% endfor %}</div>{% for item in history %}<div class="calendar-row"><span>{{ item.habit.name }}</span>{% for day in days %}<span class="calendar-cell {% if day in item.dates %}is-on{% endif %}">{% if day in item.dates %}●{% else %}·{% endif %}</span>{% endfor %}</div>{% endfor %}</section>
+{% endblock %}
