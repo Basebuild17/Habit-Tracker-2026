@@ -1,4 +1,5 @@
 from habit_tracker.db import close_db, get_db, init_db
+from habit_tracker.db import close_db, get_db, init_db
 
 from flask import current_app, g
 
