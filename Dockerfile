@@ -62,3 +62,17 @@ jobs:
             ghcr.io/Basebuild17/Habit-Tracker-2026:latest
             ghcr.io/Basebuild17/Habit-Tracker-2026:${{ github.sha }}
           labels: ${{ steps.meta.outputs.labels }}
+context: .
+labels:
+  - org.opencontainers.image.created=2026-10-24T21:06:08.297Z
+  - org.opencontainers.image.description=Break or create a new habit in 30 days
+  - org.opencontainers.image.licenses=GPL-3.0
+  - org.opencontainers.image.revision=e0857caab61a58b7d017816a031e37d17e932123
+  - org.opencontainers.image.source=https://github.com/Basebuild17/Habit-Tracker-2026
+  - org.opencontainers.image.title=Habit-Tracker-2026
+  - org.opencontainers.image.url=https://github.com/Basebuild17/Habit-Tracker-2026
+  - org.opencontainers.image.version=v.1.0.0.0
+push: true
+tags:
+  - ghcr.io/basebuild17/habit-tracker-2026:v.1.0.0.0
+  - ghcr.io/basebuild17/habit-tracker-2026:latest
