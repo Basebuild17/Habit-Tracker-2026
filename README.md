@@ -8,9 +8,13 @@ A small web app for tracking daily habits and streaks, built with Flask and SQLi
 
 - Add and delete habits
 - Add up to three tags to each habit
+- Track either a checkmark or a numeric goal with a unit
+- Assign a category and color to a habit
 - Customize a habit's active weekdays
 - Edit and reorder habits
+- Archive and restore paused habits without losing history
 - Check a habit off for today
+- Save optional notes with completion records
 - See the current streak for each habit
 - See daily completion progress and a celebration animation
 - View weekly statistics and a 30-day completion calendar

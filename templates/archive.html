@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Archive | Habit Tracker{% endblock %}
+{% block content %}
+<section class="intro compact"><p class="eyebrow">Paused practices</p><h1>Archive.</h1><p class="lede">Keep old habits and their history safe without cluttering today.</p></section>
+<section class="habit-list">{% for habit in habits %}<article class="habit-row"><div class="habit-copy"><h3>{{ habit.name }}</h3><p>{{ habit.category }} · {{ habit.frequency }}</p></div><form method="post" action="{{ url_for('restore_habit', habit_id=habit.id) }}"><button class="restore" type="submit">Restore</button></form></article>{% else %}<div class="empty"><h3>No archived habits.</h3><p>Archive a habit from Today when you need a pause.</p></div>{% endfor %}</section>
+{% endblock %}
