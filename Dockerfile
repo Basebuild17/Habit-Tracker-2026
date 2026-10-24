@@ -1,9 +1,11 @@
 FROM python:3.12-slim
 
+LABEL org.opencontainers.image.source="https://github.com/Basebuild17/Habit-Tracker-2026"
+LABEL org.opencontainers.image.title="Habit Tracker"
+LABEL org.opencontainers.image.description="A web app for tracking daily habits"
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-       LABEL org.opencontainers.image.source="https://github.com/Basebuild17/Habit-Tracker-2026"
-    
     PORT=5000
 
 WORKDIR /app
