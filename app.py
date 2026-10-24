@@ -1,5 +1,4 @@
-from datetime import date, timedelta
-from pathlib import Path
+from habit_tracker.app import app, create_app
 
 from flask import Flask, flash, redirect, render_template, request, url_for
 
@@ -243,3 +242,4 @@ def create_app(test_config=None):
 
 
 app = create_app()
+__all__ = ["app", "create_app"]

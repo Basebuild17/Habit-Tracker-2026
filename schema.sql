@@ -24,3 +24,10 @@ CREATE TABLE IF NOT EXISTS completions (
     UNIQUE (habit_id, completed_on),
     FOREIGN KEY (habit_id) REFERENCES habits (id) ON DELETE CASCADE
 );
+
+-- Indexes to speed up queries that filter, group, and sort by habit/date.
+CREATE INDEX IF NOT EXISTS idx_completions_habit_completed_on ON completions(habit_id, completed_on);
+CREATE INDEX IF NOT EXISTS idx_habits_position ON habits(position);
+
+-- Keep the existing date index for backward compatibility with reporting queries.
+CREATE INDEX IF NOT EXISTS idx_completions_completed_on ON completions(completed_on);
