@@ -2,7 +2,8 @@ FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    HABIT_TRACKER_DB=/data/habits.sqlite \
+       LABEL org.opencontainers.image.source="https://github.com/Basebuild17/Habit-Tracker-2026"
+    
     PORT=5000
 
 WORKDIR /app
