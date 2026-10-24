@@ -23,6 +23,13 @@ classifiers = [
   "Operating System :: OS Independent",
 ]
 
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0,<9.0",
+  "build>=1.2.0",
+  "twine>=5.0.0",
+]
+
 [project.urls]
 Homepage = "https://github.com/Basebuild17/Habit-Tracker-2026"
 Repository = "https://github.com/Basebuild17/Habit-Tracker-2026"
