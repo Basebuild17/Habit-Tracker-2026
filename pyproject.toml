@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "habit-tracker"
+version = "0.1.0"
+description = "A Flask app for tracking daily habits and streaks"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "Basebuild17" }
+]
+license = { text = "MIT" }
+dependencies = [
+  "Flask>=3.0,<4.0"
+]
+keywords = ["habit", "tracker", "flask", "productivity"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Framework :: Flask",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/Basebuild17/Habit-Tracker-2026"
+Repository = "https://github.com/Basebuild17/Habit-Tracker-2026"
+Issues = "https://github.com/Basebuild17/Habit-Tracker-2026/issues"
+
+[project.scripts]
+habit-tracker = "habit_tracker.cli:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["habit_tracker*"]
+
+[tool.setuptools.package-data]
+habit_tracker = ["templates/*.html", "static/*.css", "schema.sql"]
